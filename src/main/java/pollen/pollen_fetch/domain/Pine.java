@@ -14,7 +14,7 @@ public class Pine {
     @GeneratedValue
     private Long id;
 
-    private String areaCode;
+    private String areaNo;
     
     private int today;
 
@@ -22,8 +22,8 @@ public class Pine {
 
     private int dayaftertomorrow;
 
-    public Pine(String areaCode, int today, int tomorrow, int dayaftertomorrow) {
-        this.areaCode = areaCode;
+    public Pine(String areaNo, int today, int tomorrow, int dayaftertomorrow) {
+        this.areaNo = areaNo;
         this.today = today;
         this.tomorrow = tomorrow;
         this.dayaftertomorrow = dayaftertomorrow;
