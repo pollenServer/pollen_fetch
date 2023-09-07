@@ -6,13 +6,18 @@ import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pollen.pollen_fetch.domain.Oak;
+import pollen.pollen_fetch.domain.Pine;
+import pollen.pollen_fetch.domain.Weeds;
 import pollen.pollen_fetch.repository.OakRepository;
 import pollen.pollen_fetch.repository.PineRepository;
 import pollen.pollen_fetch.repository.WeedsRepository;
@@ -48,25 +53,28 @@ public class FetchService {
     @Autowired
     WeedsRepository weedsRepository;
 
+//    @Scheduled(cron = "0 05 06 * * ?", zone = "Asia/Seoul")    // 매일 06시 05분 실행
+    @Transactional
     public void fetch() throws IOException, ParseException {
         LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
         int month = now.getMonthValue();
+        String time = now.toString().replaceAll("-", "").concat("06");
         // 4~6월 => 소나무, 참나무
         if (4 <= month && month <= 6) {
-            fetchOakPollen("time");
+            fetchOakPollen(time);
         }
         if (4 <= month && month <= 6) {
-            fetchPinePollen("time");
+            fetchPinePollen(time);
         }
         // 8~10월 => 잡초류
         if (8 <= month && month <= 10) {
-            fetchWeedsPollen("time");
+            fetchWeedsPollen(time);
         }
     }
 
     public void fetchOakPollen(String time) throws IOException, ParseException {
         for (String area : codeList) {
-            String builtUrl = buildUrl("getOakPollenRiskIdxV3", area, time);
+            String builtUrl = buildUrl("getOakPollenRiskndxV3", area, time);
             JSONObject object = getJsonObject(builtUrl);
             Oak oak = new Oak(object.get("areaCode").toString(), Integer.parseInt(object.get("today").toString()), Integer.parseInt(object.get("tomorrow").toString()), Integer.parseInt(object.get("dayaftertomorrow").toString()));
             oakRepository.save(oak);
@@ -75,19 +83,27 @@ public class FetchService {
 
     public void fetchPinePollen(String time) throws IOException, ParseException {
         for (String area : codeList) {
-            String builtUrl = buildUrl("getPinePollenRiskIdxV3", area, time);
+            String builtUrl = buildUrl("getPinePollenRiskndxV3", area, time);
             JSONObject object = getJsonObject(builtUrl);
-            Oak oak = new Oak(object.get("areaCode").toString(), Integer.parseInt(object.get("today").toString()), Integer.parseInt(object.get("tomorrow").toString()), Integer.parseInt(object.get("dayaftertomorrow").toString()));
-            oakRepository.save(oak);
+            Pine pine = new Pine(object.get("areaCode").toString(), Integer.parseInt(object.get("today").toString()), Integer.parseInt(object.get("tomorrow").toString()), Integer.parseInt(object.get("dayaftertomorrow").toString()));
+            pineRepository.save(pine);
         }
     }
 
     public void fetchWeedsPollen(String time) throws IOException, ParseException {
         for (String area : codeList) {
-            String builtUrl = buildUrl("getWeedsPollenRiskIdxV3", area, time);
+            String builtUrl = buildUrl("getWeedsPollenRiskndxV3", area, time);
             JSONObject object = getJsonObject(builtUrl);
-            Oak oak = new Oak(object.get("areaCode").toString(), Integer.parseInt(object.get("today").toString()), Integer.parseInt(object.get("tomorrow").toString()), Integer.parseInt(object.get("dayaftertomorrow").toString()));
-            oakRepository.save(oak);
+            JSONObject response = (JSONObject) object.get("response");
+            JSONObject body = (JSONObject) response.get("body");
+            JSONObject items = (JSONObject) body.get("items");
+            JSONArray item = (JSONArray) items.get("item");
+            JSONObject result = (JSONObject) item.get(0);
+
+            Weeds weeds = new Weeds(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
+            System.out.println("============start : " + weeds + " ============");
+            weedsRepository.save(weeds);
+            System.out.println("============end============");
         }
     }
 
@@ -143,5 +159,6 @@ public class FetchService {
                 codeList.add(code);
             }
         }
+        opcPackage.close();
     }
 }
