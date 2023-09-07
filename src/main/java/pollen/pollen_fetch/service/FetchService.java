@@ -8,9 +8,15 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import pollen.pollen_fetch.domain.Oak;
+import pollen.pollen_fetch.repository.OakRepository;
+import pollen.pollen_fetch.repository.PineRepository;
+import pollen.pollen_fetch.repository.WeedsRepository;
 
+import javax.annotation.PostConstruct;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -29,44 +35,59 @@ public class FetchService {
     @Value("${spring.service.secret_key}")
     private String SERVICEKEY;
     private final String CHARSET = "UTF-8";
-    private final String FILE_PATH = "resources/static/areacode.xlsx";
-    private List<Integer> areaList = new ArrayList<>();
+    public List<Integer> codeList = new ArrayList<>();
+    final String FILE_PATH = "resources/static/areacode.xlsx";
+
+    @Autowired
+    OakRepository oakRepository;
+
+    @Autowired
+    PineRepository pineRepository;
+
+    @Autowired
+    WeedsRepository weedsRepository;
 
     public void fetch() throws IOException, ParseException {
         LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
         int month = now.getMonthValue();
         // 4~6월 => 소나무, 참나무
         if (4 <= month && month <= 6) {
-            fetchOakPollen("areaNo", "time");
+            fetchOakPollen("time");
         }
         if (4 <= month && month <= 6) {
-            fetchPinePollen("areaNo", "time");
+            fetchPinePollen("time");
         }
         // 8~10월 => 잡초류
         if (8 <= month && month <= 10) {
-            fetchWeedsPollen("areaNo", "time");
+            fetchWeedsPollen("time");
         }
     }
 
-    public Object fetchOakPollen(String areaNo, String time) throws IOException, ParseException {
-        String builtUrl = buildUrl("getOakPollenRiskIdxV3", areaNo, time);
-        JSONObject object = getJsonObject(builtUrl);
-
-        return object;
+    public void fetchOakPollen(String time) throws IOException, ParseException {
+        for (int area : codeList) {
+            String builtUrl = buildUrl("getOakPollenRiskIdxV3", String.valueOf(area), time);
+            JSONObject object = getJsonObject(builtUrl);
+            Oak oak = new Oak(object.get("areaCode").toString(), Integer.parseInt(object.get("today").toString()), Integer.parseInt(object.get("tomorrow").toString()), Integer.parseInt(object.get("dayaftertomorrow").toString()));
+            oakRepository.save(oak);
+        }
     }
 
-    public Object fetchPinePollen(String areaNo, String time) throws IOException, ParseException {
-        String builtUrl = buildUrl("getPinePollenRiskIdxV3", areaNo, time);
-        JSONObject object = getJsonObject(builtUrl);
-
-        return object;
+    public void fetchPinePollen(String time) throws IOException, ParseException {
+        for (int area : codeList) {
+            String builtUrl = buildUrl("getPinePollenRiskIdxV3", String.valueOf(area), time);
+            JSONObject object = getJsonObject(builtUrl);
+            Oak oak = new Oak(object.get("areaCode").toString(), Integer.parseInt(object.get("today").toString()), Integer.parseInt(object.get("tomorrow").toString()), Integer.parseInt(object.get("dayaftertomorrow").toString()));
+            oakRepository.save(oak);
+        }
     }
 
-    public Object fetchWeedsPollen(String areaNo, String time) throws IOException, ParseException {
-        String builtUrl = buildUrl("getWeedsPollenRiskIdxV3", areaNo, time);
-        JSONObject object = getJsonObject(builtUrl);
-
-        return object;
+    public void fetchWeedsPollen(String time) throws IOException, ParseException {
+        for (int area : codeList) {
+            String builtUrl = buildUrl("getWeedsPollenRiskIdxV3", String.valueOf(area), time);
+            JSONObject object = getJsonObject(builtUrl);
+            Oak oak = new Oak(object.get("areaCode").toString(), Integer.parseInt(object.get("today").toString()), Integer.parseInt(object.get("tomorrow").toString()), Integer.parseInt(object.get("dayaftertomorrow").toString()));
+            oakRepository.save(oak);
+        }
     }
 
     public JSONObject getJsonObject(String builtUrl) throws IOException, ParseException {
@@ -93,6 +114,7 @@ public class FetchService {
         return urlBuilder.toString();
     }
 
+    @PostConstruct
     public void ReadAreaCodeService() throws InvalidFormatException, IOException {
         OPCPackage opcPackage = OPCPackage.open(new File(FILE_PATH));
 
@@ -103,6 +125,7 @@ public class FetchService {
             XSSFRow row = sheet.getRow(i);
             if (row != null) {
                 int code = Integer.parseInt(row.getCell(1).getCellFormula());
+                codeList.add(code);
             }
         }
     }
