@@ -76,7 +76,12 @@ public class FetchService {
         for (String area : codeList) {
             String builtUrl = buildUrl("getOakPollenRiskndxV3", area, time);
             JSONObject object = getJsonObject(builtUrl);
-            Oak oak = new Oak(object.get("areaCode").toString(), Integer.parseInt(object.get("today").toString()), Integer.parseInt(object.get("tomorrow").toString()), Integer.parseInt(object.get("dayaftertomorrow").toString()));
+            JSONObject response = (JSONObject) object.get("response");
+            JSONObject body = (JSONObject) response.get("body");
+            JSONObject items = (JSONObject) body.get("items");
+            JSONArray item = (JSONArray) items.get("item");
+            JSONObject result = (JSONObject) item.get(0);
+            Oak oak = new Oak(result.get("areaCode").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
             oakRepository.save(oak);
         }
     }
@@ -85,7 +90,13 @@ public class FetchService {
         for (String area : codeList) {
             String builtUrl = buildUrl("getPinePollenRiskndxV3", area, time);
             JSONObject object = getJsonObject(builtUrl);
-            Pine pine = new Pine(object.get("areaCode").toString(), Integer.parseInt(object.get("today").toString()), Integer.parseInt(object.get("tomorrow").toString()), Integer.parseInt(object.get("dayaftertomorrow").toString()));
+            JSONObject response = (JSONObject) object.get("response");
+            JSONObject body = (JSONObject) response.get("body");
+            JSONObject items = (JSONObject) body.get("items");
+            JSONArray item = (JSONArray) items.get("item");
+            JSONObject result = (JSONObject) item.get(0);
+
+            Pine pine = new Pine(result.get("areaCode").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
             pineRepository.save(pine);
         }
     }
