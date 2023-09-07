@@ -14,7 +14,7 @@ public class Weeds {
     @GeneratedValue
     private Long id;
 
-    private String areaCode;
+    private String areaNo;
     
     private int today;
 
@@ -22,8 +22,8 @@ public class Weeds {
 
     private int dayaftertomorrow;
 
-    public Weeds(String areaCode, int today, int tomorrow, int dayaftertomorrow) {
-        this.areaCode = areaCode;
+    public Weeds(String areaNo, int today, int tomorrow, int dayaftertomorrow) {
+        this.areaNo = areaNo;
         this.today = today;
         this.tomorrow = tomorrow;
         this.dayaftertomorrow = dayaftertomorrow;
