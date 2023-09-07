@@ -2,6 +2,7 @@ package pollen.pollen_fetch.service;
 
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -35,8 +36,8 @@ public class FetchService {
     @Value("${spring.service.secret_key}")
     private String SERVICEKEY;
     private final String CHARSET = "UTF-8";
-    public List<Integer> codeList = new ArrayList<>();
-    final String FILE_PATH = "resources/static/areacode.xlsx";
+    public List<String> codeList = new ArrayList<>();
+    final String FILE_PATH = "src/main/resources/static/areacode.xlsx";
 
     @Autowired
     OakRepository oakRepository;
@@ -64,8 +65,8 @@ public class FetchService {
     }
 
     public void fetchOakPollen(String time) throws IOException, ParseException {
-        for (int area : codeList) {
-            String builtUrl = buildUrl("getOakPollenRiskIdxV3", String.valueOf(area), time);
+        for (String area : codeList) {
+            String builtUrl = buildUrl("getOakPollenRiskIdxV3", area, time);
             JSONObject object = getJsonObject(builtUrl);
             Oak oak = new Oak(object.get("areaCode").toString(), Integer.parseInt(object.get("today").toString()), Integer.parseInt(object.get("tomorrow").toString()), Integer.parseInt(object.get("dayaftertomorrow").toString()));
             oakRepository.save(oak);
@@ -73,8 +74,8 @@ public class FetchService {
     }
 
     public void fetchPinePollen(String time) throws IOException, ParseException {
-        for (int area : codeList) {
-            String builtUrl = buildUrl("getPinePollenRiskIdxV3", String.valueOf(area), time);
+        for (String area : codeList) {
+            String builtUrl = buildUrl("getPinePollenRiskIdxV3", area, time);
             JSONObject object = getJsonObject(builtUrl);
             Oak oak = new Oak(object.get("areaCode").toString(), Integer.parseInt(object.get("today").toString()), Integer.parseInt(object.get("tomorrow").toString()), Integer.parseInt(object.get("dayaftertomorrow").toString()));
             oakRepository.save(oak);
@@ -82,8 +83,8 @@ public class FetchService {
     }
 
     public void fetchWeedsPollen(String time) throws IOException, ParseException {
-        for (int area : codeList) {
-            String builtUrl = buildUrl("getWeedsPollenRiskIdxV3", String.valueOf(area), time);
+        for (String area : codeList) {
+            String builtUrl = buildUrl("getWeedsPollenRiskIdxV3", area, time);
             JSONObject object = getJsonObject(builtUrl);
             Oak oak = new Oak(object.get("areaCode").toString(), Integer.parseInt(object.get("today").toString()), Integer.parseInt(object.get("tomorrow").toString()), Integer.parseInt(object.get("dayaftertomorrow").toString()));
             oakRepository.save(oak);
@@ -121,10 +122,24 @@ public class FetchService {
         XSSFWorkbook workbook = new XSSFWorkbook(opcPackage);
         XSSFSheet sheet = workbook.getSheetAt(0);
         int rows = sheet.getPhysicalNumberOfRows();
-        for (int i = 0; i < rows; i++) {
+        for (int i = 1; i < rows; i++) {
             XSSFRow row = sheet.getRow(i);
             if (row != null) {
-                int code = Integer.parseInt(row.getCell(1).getCellFormula());
+                XSSFCell cell = row.getCell(1);
+                String code ="";
+                switch (cell.getCellType()) {
+                    case NUMERIC:
+                        code = String.valueOf(cell.getNumericCellValue());
+                        break;
+                    case STRING:
+                        code = cell.getStringCellValue().replaceAll(" ", "");
+                        break;
+                    case FORMULA:
+                        code = cell.getCellFormula().replaceAll(" ", "");
+                    default:
+                        break;
+                }
+
                 codeList.add(code);
             }
         }
