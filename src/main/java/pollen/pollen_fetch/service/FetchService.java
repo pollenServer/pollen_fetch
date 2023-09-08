@@ -12,9 +12,7 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import pollen.pollen_fetch.domain.Oak;
 import pollen.pollen_fetch.domain.Pine;
 import pollen.pollen_fetch.domain.Weeds;
@@ -41,7 +39,7 @@ public class FetchService {
     @Value("${spring.service.secret_key}")
     private String SERVICEKEY;
     private final String CHARSET = "UTF-8";
-    public List<String> codeList = new ArrayList<>();
+    public List<String> areaList = new ArrayList<>();
     final String FILE_PATH = "src/main/resources/static/areacode.xlsx";
 
     @Autowired
@@ -53,8 +51,7 @@ public class FetchService {
     @Autowired
     WeedsRepository weedsRepository;
 
-//    @Scheduled(cron = "0 05 06 * * ?", zone = "Asia/Seoul")    // 매일 06시 05분 실행
-    @Transactional
+    //    @Scheduled(cron = "0 05 06 * * ?", zone = "Asia/Seoul")    // 매일 06시 05분 실행
     public void fetch() throws IOException, ParseException {
         LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
         int month = now.getMonthValue();
@@ -73,49 +70,87 @@ public class FetchService {
     }
 
     public void fetchOakPollen(String time) throws IOException, ParseException {
-        for (String area : codeList) {
-            String builtUrl = buildUrl("getOakPollenRiskndxV3", area, time);
-            JSONObject object = getJsonObject(builtUrl);
-            JSONObject response = (JSONObject) object.get("response");
-            JSONObject body = (JSONObject) response.get("body");
-            JSONObject items = (JSONObject) body.get("items");
-            JSONArray item = (JSONArray) items.get("item");
-            JSONObject result = (JSONObject) item.get(0);
-            Oak oak = new Oak(result.get("areaCode").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
-            oakRepository.save(oak);
+        List<Oak> findAll = oakRepository.findAll();
+
+        if (findAll.size() == 0) {
+            for (String areaNo : areaList) {
+                JSONObject result = getData("getOakPollenRiskndxV3", areaNo, time);
+                if (result != null) {
+                    Oak oak = new Oak(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    oakRepository.save(oak);
+                }
+            }
+        } else {
+            for (Oak oak : findAll) {
+                JSONObject result = getData("getOakPollenRiskndxV3", oak.getAreaNo(), time);
+                if (result != null) {
+                    oak.setToday(Integer.parseInt(result.get("today").toString()));
+                    oak.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                    oak.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                }
+            }
         }
     }
 
     public void fetchPinePollen(String time) throws IOException, ParseException {
-        for (String area : codeList) {
-            String builtUrl = buildUrl("getPinePollenRiskndxV3", area, time);
-            JSONObject object = getJsonObject(builtUrl);
-            JSONObject response = (JSONObject) object.get("response");
-            JSONObject body = (JSONObject) response.get("body");
-            JSONObject items = (JSONObject) body.get("items");
-            JSONArray item = (JSONArray) items.get("item");
-            JSONObject result = (JSONObject) item.get(0);
+        List<Pine> findAll = pineRepository.findAll();
 
-            Pine pine = new Pine(result.get("areaCode").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
-            pineRepository.save(pine);
+        if (findAll.size() == 0) {
+            for (String areaNo : areaList) {
+                JSONObject result = getData("getPinePollenRiskndxV3", areaNo, time);
+                if (result != null) {
+                    Pine pine = new Pine(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    pineRepository.save(pine);
+                }
+            }
+        } else {
+            for (Pine pine : findAll) {
+                JSONObject result = getData("getPinePollenRiskndxV3", pine.getAreaNo(), time);
+                if (result != null) {
+                    pine.setToday(Integer.parseInt(result.get("today").toString()));
+                    pine.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                    pine.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                }
+            }
         }
     }
 
     public void fetchWeedsPollen(String time) throws IOException, ParseException {
-        for (String area : codeList) {
-            String builtUrl = buildUrl("getWeedsPollenRiskndxV3", area, time);
-            JSONObject object = getJsonObject(builtUrl);
-            JSONObject response = (JSONObject) object.get("response");
+        List<Weeds> findAll = weedsRepository.findAll();
+
+        if (findAll.size() == 0) {
+            for (String areaNo : areaList) {
+                JSONObject result = getData("getWeedsPollenRiskndxV3", areaNo, time);
+                if (result != null) {
+                    Weeds weeds = new Weeds(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    weedsRepository.save(weeds);
+                }
+            }
+        } else {
+            for (Weeds weeds : findAll) {
+                JSONObject result = getData("getWeedsPollenRiskndxV3", weeds.getAreaNo(), time);
+                if (result != null) {
+                    weeds.setToday(Integer.parseInt(result.get("today").toString()));
+                    weeds.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                    weeds.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                }
+            }
+        }
+    }
+
+    public JSONObject getData(String url, String areaNo, String time) throws IOException, ParseException {
+        String builtUrl = buildUrl(url, areaNo, time);
+        JSONObject object = getJsonObject(builtUrl);
+        JSONObject response = (JSONObject) object.get("response");
+        JSONObject header = (JSONObject) response.get("header");
+        if (header.get("resultCode").equals("00")) {
             JSONObject body = (JSONObject) response.get("body");
             JSONObject items = (JSONObject) body.get("items");
             JSONArray item = (JSONArray) items.get("item");
-            JSONObject result = (JSONObject) item.get(0);
 
-            Weeds weeds = new Weeds(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
-            System.out.println("============start : " + weeds + " ============");
-            weedsRepository.save(weeds);
-            System.out.println("============end============");
+            return (JSONObject) item.get(0);
         }
+        return null;
     }
 
     public JSONObject getJsonObject(String builtUrl) throws IOException, ParseException {
@@ -153,21 +188,21 @@ public class FetchService {
             XSSFRow row = sheet.getRow(i);
             if (row != null) {
                 XSSFCell cell = row.getCell(1);
-                String code ="";
+                String areaNo = "";
                 switch (cell.getCellType()) {
                     case NUMERIC:
-                        code = String.valueOf(cell.getNumericCellValue());
+                        areaNo = String.valueOf(cell.getNumericCellValue());
                         break;
                     case STRING:
-                        code = cell.getStringCellValue().replaceAll(" ", "");
+                        areaNo = cell.getStringCellValue().replaceAll(" ", "");
                         break;
                     case FORMULA:
-                        code = cell.getCellFormula().replaceAll(" ", "");
+                        areaNo = cell.getCellFormula().replaceAll(" ", "");
                     default:
                         break;
                 }
 
-                codeList.add(code);
+                areaList.add(areaNo);
             }
         }
         opcPackage.close();
