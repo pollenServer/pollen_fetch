@@ -1,5 +1,6 @@
 package pollen.pollen_fetch.service;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.xssf.usermodel.XSSFCell;
@@ -13,6 +14,7 @@ import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StopWatch;
 import pollen.pollen_fetch.domain.Oak;
 import pollen.pollen_fetch.domain.Pine;
 import pollen.pollen_fetch.domain.Weeds;
@@ -34,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Slf4j
 public class FetchService {
 
     @Value("${spring.service.secret_key}")
@@ -118,6 +121,8 @@ public class FetchService {
     public void fetchWeedsPollen(String time) throws IOException, ParseException {
         List<Weeds> findAll = weedsRepository.findAll();
 
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         if (findAll.size() == 0) {
             for (String areaNo : areaList) {
                 JSONObject result = getData("getWeedsPollenRiskndxV3", areaNo, time);
@@ -136,6 +141,8 @@ public class FetchService {
                 }
             }
         }
+        stopWatch.stop();
+        log.info("수행 시간 >> {}",stopWatch.getTotalTimeSeconds());
     }
 
     public JSONObject getData(String url, String areaNo, String time) throws IOException, ParseException {
