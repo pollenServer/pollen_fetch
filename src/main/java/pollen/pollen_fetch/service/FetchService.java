@@ -1,5 +1,6 @@
 package pollen.pollen_fetch.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
@@ -11,7 +12,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StopWatch;
@@ -37,6 +37,7 @@ import java.util.List;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class FetchService {
 
     @Value("${spring.service.secret_key}")
@@ -45,20 +46,16 @@ public class FetchService {
     public List<String> areaList = new ArrayList<>();
     final String FILE_PATH = "src/main/resources/static/areacode.xlsx";
 
-    @Autowired
-    OakRepository oakRepository;
-
-    @Autowired
-    PineRepository pineRepository;
-
-    @Autowired
-    WeedsRepository weedsRepository;
+    private final OakRepository oakRepository;
+    private final PineRepository pineRepository;
+    private final WeedsRepository weedsRepository;
 
     //    @Scheduled(cron = "0 05 06 * * ?", zone = "Asia/Seoul")    // 매일 06시 05분 실행
     public void fetch() throws IOException, ParseException {
         LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
         int month = now.getMonthValue();
         String time = now.toString().replaceAll("-", "").concat("06");
+        log.info("time : {}", time);
         // 4~6월 => 소나무, 참나무
         if (4 <= month && month <= 6) {
             fetchOakPollen(time);
@@ -79,7 +76,12 @@ public class FetchService {
             for (String areaNo : areaList) {
                 JSONObject result = getData("getOakPollenRiskndxV3", areaNo, time);
                 if (result != null) {
-                    Oak oak = new Oak(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    Oak oak;
+                    if(result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
+                        oak = new Oak(result.get("areaNo").toString(), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()), Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
+                    } else {
+                        oak = new Oak(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    }
                     oakRepository.save(oak);
                 }
             }
@@ -87,9 +89,15 @@ public class FetchService {
             for (Oak oak : findAll) {
                 JSONObject result = getData("getOakPollenRiskndxV3", oak.getAreaNo(), time);
                 if (result != null) {
-                    oak.setToday(Integer.parseInt(result.get("today").toString()));
-                    oak.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
-                    oak.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    if(result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
+                        oak.setToday(Integer.parseInt(result.get("tomorrow").toString()));
+                        oak.setTomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                        oak.setDayaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
+                    } else {
+                        oak.setToday(Integer.parseInt(result.get("today").toString()));
+                        oak.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                        oak.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    }
                 }
             }
         }
@@ -102,7 +110,12 @@ public class FetchService {
             for (String areaNo : areaList) {
                 JSONObject result = getData("getPinePollenRiskndxV3", areaNo, time);
                 if (result != null) {
-                    Pine pine = new Pine(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    Pine pine;
+                    if(result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
+                        pine = new Pine(result.get("areaNo").toString(), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()), Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
+                    } else {
+                        pine = new Pine(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    }
                     pineRepository.save(pine);
                 }
             }
@@ -110,9 +123,15 @@ public class FetchService {
             for (Pine pine : findAll) {
                 JSONObject result = getData("getPinePollenRiskndxV3", pine.getAreaNo(), time);
                 if (result != null) {
-                    pine.setToday(Integer.parseInt(result.get("today").toString()));
-                    pine.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
-                    pine.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    if(result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
+                        pine.setToday(Integer.parseInt(result.get("tomorrow").toString()));
+                        pine.setTomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                        pine.setDayaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
+                    } else {
+                        pine.setToday(Integer.parseInt(result.get("today").toString()));
+                        pine.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                        pine.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    }
                 }
             }
         }
@@ -120,56 +139,91 @@ public class FetchService {
 
     public void fetchWeedsPollen(String time) throws IOException, ParseException {
         List<Weeds> findAll = weedsRepository.findAll();
+        List<Weeds> changedWeeds = new ArrayList<>();
 
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         if (findAll.size() == 0) {
             for (String areaNo : areaList) {
                 JSONObject result = getData("getWeedsPollenRiskndxV3", areaNo, time);
+                Weeds weeds;
                 if (result != null) {
-                    Weeds weeds = new Weeds(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
-                    weedsRepository.save(weeds);
+                    if(result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
+                        weeds = new Weeds(result.get("areaNo").toString(), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()), Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
+                    } else {
+                        weeds = new Weeds(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    }
+
+                    changedWeeds.add(weeds);
+                } else {
+                    weeds = new Weeds(areaNo);
+                    changedWeeds.add(weeds);
                 }
+                log.info("{}", areaNo);
             }
+            weedsRepository.saveAll(changedWeeds);
         } else {
             for (Weeds weeds : findAll) {
                 JSONObject result = getData("getWeedsPollenRiskndxV3", weeds.getAreaNo(), time);
+                log.info("{} : {}",weeds.getAreaNo(), result);
                 if (result != null) {
-                    weeds.setToday(Integer.parseInt(result.get("today").toString()));
-                    weeds.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
-                    weeds.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    if(result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
+                        weeds.setToday(Integer.parseInt(result.get("tomorrow").toString()));
+                        weeds.setTomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                        weeds.setDayaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
+                    } else {    // 당일 06시 데이터 응답
+                        weeds.setToday(Integer.parseInt(result.get("today").toString()));
+                        weeds.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                        weeds.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                    }
                 }
             }
         }
         stopWatch.stop();
-        log.info("수행 시간 >> {}",stopWatch.getTotalTimeSeconds());
+        log.info("수행 시간 >> {}", stopWatch.getTotalTimeSeconds());
     }
 
     public JSONObject getData(String url, String areaNo, String time) throws IOException, ParseException {
         String builtUrl = buildUrl(url, areaNo, time);
+        log.info("builtUrl : {}", builtUrl);
         JSONObject object = getJsonObject(builtUrl);
-        JSONObject response = (JSONObject) object.get("response");
-        JSONObject header = (JSONObject) response.get("header");
-        if (header.get("resultCode").equals("00")) {
-            JSONObject body = (JSONObject) response.get("body");
-            JSONObject items = (JSONObject) body.get("items");
-            JSONArray item = (JSONArray) items.get("item");
+        if (object != null) {
+            JSONObject response = (JSONObject) object.get("response");
+            JSONObject header = (JSONObject) response.get("header");
+            if (header.get("resultCode").equals("00")) {
+                JSONObject body = (JSONObject) response.get("body");
+                JSONObject items = (JSONObject) body.get("items");
+                JSONArray item = (JSONArray) items.get("item");
 
-            return (JSONObject) item.get(0);
+                return (JSONObject) item.get(0);
+            }
         }
         return null;
     }
 
-    public JSONObject getJsonObject(String builtUrl) throws IOException, ParseException {
-        URL url = new URL(builtUrl);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        conn.setRequestProperty("Content-type", "application/json");
+    public JSONObject getJsonObject(String builtUrl) throws ParseException {
+        log.info("==================connection start==================");
+        try {
+            URL url = new URL(builtUrl);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Content-type", "application/json;utf-8");
+            conn.setRequestProperty("Accept", "application/json");
+            if (conn.getResponseCode() == 200) {
+                JSONParser jsonParser = new JSONParser();
+                JSONObject object = (JSONObject) jsonParser.parse(new InputStreamReader(conn.getInputStream(), CHARSET));
+                conn.disconnect();
 
-        JSONParser jsonParser = new JSONParser();
-        JSONObject object = (JSONObject) jsonParser.parse(new InputStreamReader(conn.getInputStream(), CHARSET));
-        conn.disconnect();
-        return object;
+                log.info("==================connection end==================");
+                return object;
+            } else {
+                conn.disconnect();
+                log.info("==================connection fail==================");
+                return null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     public String buildUrl(String url, String areaNo, String time) throws UnsupportedEncodingException {
