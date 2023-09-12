@@ -67,19 +67,24 @@ public class FetchService {
 
     public void fetchOakPollen(String time) throws IOException, ParseException {
         List<Oak> findAll = oakRepository.findAll();
+        List<Oak> changedOak = new ArrayList<>();
 
         if (findAll.size() == 0) {
             for (String areaNo : areaList) {
                 JSONObject result = getData("getOakPollenRiskndxV3", areaNo, time);
+                Oak oak;
                 if (result != null) {
-                    Oak oak;
                     if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
                         oak = new Oak(result.get("areaNo").toString(), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()), Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
                     } else {
                         oak = new Oak(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
                     }
-                    oakRepository.save(oak);
+                    changedOak.add(oak);
+                } else {
+                    oak = new Oak(areaNo);
+                    changedOak.add(oak);
                 }
+                oakRepository.saveAll(changedOak);
             }
         } else {
             for (Oak oak : findAll) {
@@ -101,19 +106,25 @@ public class FetchService {
 
     public void fetchPinePollen(String time) throws IOException, ParseException {
         List<Pine> findAll = pineRepository.findAll();
+        List<Pine> changedPine = new ArrayList<>();
 
         if (findAll.size() == 0) {
             for (String areaNo : areaList) {
                 JSONObject result = getData("getPinePollenRiskndxV3", areaNo, time);
+                Pine pine;
                 if (result != null) {
-                    Pine pine;
                     if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
                         pine = new Pine(result.get("areaNo").toString(), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()), Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
                     } else {
                         pine = new Pine(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
                     }
-                    pineRepository.save(pine);
+
+                    changedPine.add(pine);
+                } else {
+                    pine = new Pine(areaNo);
+                    changedPine.add(pine);
                 }
+                pineRepository.saveAll(changedPine);
             }
         } else {
             for (Pine pine : findAll) {
@@ -153,7 +164,6 @@ public class FetchService {
                     weeds = new Weeds(areaNo);
                     changedWeeds.add(weeds);
                 }
-                log.info("{}", areaNo);
             }
             weedsRepository.saveAll(changedWeeds);
         } else {
