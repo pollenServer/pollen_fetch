@@ -13,6 +13,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import pollen.pollen_fetch.domain.Oak;
 import pollen.pollen_fetch.domain.Pine;
@@ -46,12 +47,12 @@ public class FetchService {
     private final PineRepository pineRepository;
     private final WeedsRepository weedsRepository;
 
-    //    @Scheduled(cron = "0 05 06 * * ?", zone = "Asia/Seoul")    // 매일 06시 05분 실행
+    @Scheduled(cron = "0 05 06 * * ?", zone = "Asia/Seoul")    // 매일 06시 05분 실행
     public void fetch() throws IOException, ParseException {
         LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
         int month = now.getMonthValue();
         String time = now.toString().replaceAll("-", "").concat("06");
-        log.info("time : {}", time);
+        log.info("FetchService start time : {}", time);
         // 4~6월 => 소나무, 참나무
         if (4 <= month && month <= 6) {
             fetchOakPollen(time);
