@@ -14,7 +14,6 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StopWatch;
 import pollen.pollen_fetch.domain.Oak;
 import pollen.pollen_fetch.domain.Pine;
 import pollen.pollen_fetch.domain.Weeds;
@@ -23,10 +22,7 @@ import pollen.pollen_fetch.repository.PineRepository;
 import pollen.pollen_fetch.repository.WeedsRepository;
 
 import javax.annotation.PostConstruct;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -77,7 +73,7 @@ public class FetchService {
                 JSONObject result = getData("getOakPollenRiskndxV3", areaNo, time);
                 if (result != null) {
                     Oak oak;
-                    if(result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
+                    if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
                         oak = new Oak(result.get("areaNo").toString(), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()), Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
                     } else {
                         oak = new Oak(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
@@ -89,7 +85,7 @@ public class FetchService {
             for (Oak oak : findAll) {
                 JSONObject result = getData("getOakPollenRiskndxV3", oak.getAreaNo(), time);
                 if (result != null) {
-                    if(result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
+                    if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
                         oak.setToday(Integer.parseInt(result.get("tomorrow").toString()));
                         oak.setTomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
                         oak.setDayaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
@@ -111,7 +107,7 @@ public class FetchService {
                 JSONObject result = getData("getPinePollenRiskndxV3", areaNo, time);
                 if (result != null) {
                     Pine pine;
-                    if(result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
+                    if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
                         pine = new Pine(result.get("areaNo").toString(), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()), Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
                     } else {
                         pine = new Pine(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
@@ -123,7 +119,7 @@ public class FetchService {
             for (Pine pine : findAll) {
                 JSONObject result = getData("getPinePollenRiskndxV3", pine.getAreaNo(), time);
                 if (result != null) {
-                    if(result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
+                    if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
                         pine.setToday(Integer.parseInt(result.get("tomorrow").toString()));
                         pine.setTomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
                         pine.setDayaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
@@ -141,14 +137,12 @@ public class FetchService {
         List<Weeds> findAll = weedsRepository.findAll();
         List<Weeds> changedWeeds = new ArrayList<>();
 
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
         if (findAll.size() == 0) {
             for (String areaNo : areaList) {
                 JSONObject result = getData("getWeedsPollenRiskndxV3", areaNo, time);
                 Weeds weeds;
                 if (result != null) {
-                    if(result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
+                    if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
                         weeds = new Weeds(result.get("areaNo").toString(), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()), Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
                     } else {
                         weeds = new Weeds(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
@@ -165,9 +159,8 @@ public class FetchService {
         } else {
             for (Weeds weeds : findAll) {
                 JSONObject result = getData("getWeedsPollenRiskndxV3", weeds.getAreaNo(), time);
-                log.info("{} : {}",weeds.getAreaNo(), result);
                 if (result != null) {
-                    if(result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
+                    if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
                         weeds.setToday(Integer.parseInt(result.get("tomorrow").toString()));
                         weeds.setTomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
                         weeds.setDayaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
@@ -179,13 +172,10 @@ public class FetchService {
                 }
             }
         }
-        stopWatch.stop();
-        log.info("수행 시간 >> {}", stopWatch.getTotalTimeSeconds());
     }
 
     public JSONObject getData(String url, String areaNo, String time) throws IOException, ParseException {
         String builtUrl = buildUrl(url, areaNo, time);
-        log.info("builtUrl : {}", builtUrl);
         JSONObject object = getJsonObject(builtUrl);
         if (object != null) {
             JSONObject response = (JSONObject) object.get("response");
@@ -202,7 +192,6 @@ public class FetchService {
     }
 
     public JSONObject getJsonObject(String builtUrl) throws ParseException {
-        log.info("==================connection start==================");
         try {
             URL url = new URL(builtUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -210,15 +199,19 @@ public class FetchService {
             conn.setRequestProperty("Content-type", "application/json;utf-8");
             conn.setRequestProperty("Accept", "application/json");
             if (conn.getResponseCode() == 200) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), CHARSET));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    sb.append(line);
+                }
                 JSONParser jsonParser = new JSONParser();
-                JSONObject object = (JSONObject) jsonParser.parse(new InputStreamReader(conn.getInputStream(), CHARSET));
+                JSONObject object = (JSONObject) jsonParser.parse(sb.toString());
                 conn.disconnect();
 
-                log.info("==================connection end==================");
                 return object;
             } else {
                 conn.disconnect();
-                log.info("==================connection fail==================");
                 return null;
             }
         } catch (IOException e) {
