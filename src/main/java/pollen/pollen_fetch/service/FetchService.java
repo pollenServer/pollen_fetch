@@ -243,7 +243,7 @@ public class FetchService {
     }
 
     @PostConstruct
-    public void ReadAreaCodeService() throws InvalidFormatException, IOException {
+    public void ReadAreaCodeService() throws InvalidFormatException, IOException, ParseException {
         OPCPackage opcPackage = OPCPackage.open(new File(FILE_PATH));
 
         XSSFWorkbook workbook = new XSSFWorkbook(opcPackage);
@@ -271,5 +271,6 @@ public class FetchService {
             }
         }
         opcPackage.close();
+        fetch();
     }
 }
