@@ -2,12 +2,6 @@ package pollen.pollen_fetch.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.openxml4j.opc.OPCPackage;
-import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -30,6 +24,7 @@ import java.net.URLEncoder;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -41,7 +36,7 @@ public class FetchService {
     private String SERVICEKEY;
     private final String CHARSET = "UTF-8";
     public List<String> areaList = new ArrayList<>();
-    final String FILE_PATH = "src/main/resources/static/areacode.xlsx";
+    final String FILE_PATH = "src/main/resources/static/areacode.txt";
 
     private final OakRepository oakRepository;
     private final PineRepository pineRepository;
@@ -243,34 +238,10 @@ public class FetchService {
     }
 
     @PostConstruct
-    public void ReadAreaCodeService() throws InvalidFormatException, IOException, ParseException {
-        OPCPackage opcPackage = OPCPackage.open(new File(FILE_PATH));
-
-        XSSFWorkbook workbook = new XSSFWorkbook(opcPackage);
-        XSSFSheet sheet = workbook.getSheetAt(0);
-        int rows = sheet.getPhysicalNumberOfRows();
-        for (int i = 1; i < rows; i++) {
-            XSSFRow row = sheet.getRow(i);
-            if (row != null) {
-                XSSFCell cell = row.getCell(1);
-                String areaNo = "";
-                switch (cell.getCellType()) {
-                    case NUMERIC:
-                        areaNo = String.valueOf(cell.getNumericCellValue());
-                        break;
-                    case STRING:
-                        areaNo = cell.getStringCellValue().replaceAll(" ", "");
-                        break;
-                    case FORMULA:
-                        areaNo = cell.getCellFormula().replaceAll(" ", "");
-                    default:
-                        break;
-                }
-
-                areaList.add(areaNo);
-            }
-        }
-        opcPackage.close();
+    public void ReadAreaCodeService() throws IOException, ParseException {
+        BufferedReader br = new BufferedReader(new FileReader(FILE_PATH));
+        String[] areas = br.readLine().split(" ");
+        areaList.addAll(Arrays.asList(areas));
         fetch();
     }
 }
