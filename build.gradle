@@ -23,8 +23,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'com.googlecode.json-simple:json-simple:1.1.1'
 
-    implementation 'org.apache.poi:poi-ooxml:5.2.3'
-
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
