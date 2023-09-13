@@ -7,9 +7,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.ResourcePatternUtils;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import pollen.pollen_fetch.domain.Oak;
@@ -39,7 +37,7 @@ public class FetchService {
     private String SERVICEKEY;
     private final String CHARSET = "UTF-8";
     public List<String> areaList = new ArrayList<>();
-    final String FILE_PATH = "static/areacode.txt";
+    final String FILE = "areacode.txt";
 
     private final OakRepository oakRepository;
     private final PineRepository pineRepository;
@@ -242,7 +240,7 @@ public class FetchService {
 
     @PostConstruct
     public void ReadAreaCodeService() throws IOException, ParseException {
-        Resource resource = ResourcePatternUtils.getResourcePatternResolver(new DefaultResourceLoader()).getResource("classpath:" + FILE_PATH);
+        ClassPathResource resource = new ClassPathResource(FILE);
         BufferedReader br = new BufferedReader(new FileReader(resource.getFile()));
         String[] areas = br.readLine().split(" ");
         areaList.addAll(Arrays.asList(areas));
