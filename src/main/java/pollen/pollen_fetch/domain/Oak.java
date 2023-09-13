@@ -1,16 +1,14 @@
 package pollen.pollen_fetch.domain;
 
+import com.sun.istack.NotNull;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.lang.Nullable;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
 @Entity
-@NoArgsConstructor
 @Getter
 @Setter
 public class Oak {
@@ -18,17 +16,19 @@ public class Oak {
     @Id
     @GeneratedValue
     private Long id;
-    
+
+    @NotNull
     private String areaNo;
 
-    @Nullable
     private int today;
 
-    @Nullable
     private int tomorrow;
 
-    @Nullable
     private int dayaftertomorrow;
+
+    public Oak() {
+
+    }
 
     public Oak(String areaNo) {
         this.areaNo = areaNo;
