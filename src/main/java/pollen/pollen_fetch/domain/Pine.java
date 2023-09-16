@@ -1,43 +1,35 @@
 package pollen.pollen_fetch.domain;
 
-import com.sun.istack.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 
 @Entity
 @Getter
 @Setter
-public class Pine {
+public class Pine extends BaseEntity{
 
     @Id
-    @GeneratedValue
-    private Long id;
-
-    @NotNull
     private String areaNo;
 
+    @Column
     private int today;
 
+    @Column
     private int tomorrow;
 
+    @Column
     private int dayaftertomorrow;
 
-    public Pine() {
+    @Column
+    private int twodaysaftertomorrow;
 
-    }
+    public Pine() {}
 
     public Pine(String areaNo) {
         this.areaNo = areaNo;
-    }
-
-    public Pine(String areaNo, int today, int tomorrow, int dayaftertomorrow) {
-        this.areaNo = areaNo;
-        this.today = today;
-        this.tomorrow = tomorrow;
-        this.dayaftertomorrow = dayaftertomorrow;
     }
 }
