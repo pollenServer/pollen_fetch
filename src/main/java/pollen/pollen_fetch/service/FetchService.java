@@ -224,6 +224,8 @@ public class FetchService {
         try {
             URL url = new URL(builtUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(TIMEOUT_VALUE);
+            conn.setReadTimeout(TIMEOUT_VALUE);
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Content-type", "application/json;utf-8");
             conn.setRequestProperty("Accept", "application/json");
