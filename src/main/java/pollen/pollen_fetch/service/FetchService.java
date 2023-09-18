@@ -22,6 +22,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,17 +36,21 @@ public class FetchService {
     @Value("${spring.service.secret_key}")
     private String SERVICEKEY;
     private final String CHARSET = "UTF-8";
+    private final int TIMEOUT_VALUE = 5000;
     public List<String> areaList = new ArrayList<>();
 
     private final OakRepository oakRepository;
     private final PineRepository pineRepository;
     private final WeedsRepository weedsRepository;
 
-    @Scheduled(cron = "0 05 06 * * ?", zone = "Asia/Seoul")    // 매일 06시 05분 실행
+    @Scheduled(cron = "0 05 06,18 * * ?", zone = "Asia/Seoul")    // 매일 06시,18시 05분 실행
     public void fetch() throws IOException, ParseException {
-        LocalDate now = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         int month = now.getMonthValue();
-        String time = now.toString().replaceAll("-", "").concat("06");
+        String date = now.toLocalDate().toString().replaceAll("-", "");
+        String hour = now.toLocalTime().toString().substring(0, 2);
+
+        String time = date.concat(hour);
         log.info("FetchService start time : {}", time);
         // 4~6월 => 소나무, 참나무
         if (4 <= month && month <= 6) {
@@ -70,10 +75,17 @@ public class FetchService {
                 Oak oak;
                 if (result != null) {
                     if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
-                        oak = new Oak(result.get("areaNo").toString(), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()), Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
+                        oak = new Oak(areaNo);
+                        oak.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                        oak.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                        oak.setTwodaysaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
                     } else {
-                        oak = new Oak(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                        oak = new Oak(areaNo);
+                        oak.setToday(Integer.parseInt(result.get("today").toString()));
+                        oak.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                        oak.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
                     }
+
                     changedOak.add(oak);
                 } else {
                     oak = new Oak(areaNo);
@@ -86,9 +98,9 @@ public class FetchService {
                 JSONObject result = getData("getOakPollenRiskndxV3", oak.getAreaNo(), time);
                 if (result != null) {
                     if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
-                        oak.setToday(Integer.parseInt(result.get("tomorrow").toString()));
-                        oak.setTomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
-                        oak.setDayaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
+                        oak.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                        oak.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                        oak.setTwodaysaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
                     } else {
                         oak.setToday(Integer.parseInt(result.get("today").toString()));
                         oak.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
@@ -109,9 +121,15 @@ public class FetchService {
                 Pine pine;
                 if (result != null) {
                     if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
-                        pine = new Pine(result.get("areaNo").toString(), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()), Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
+                        pine = new Pine(areaNo);
+                        pine.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                        pine.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                        pine.setTwodaysaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
                     } else {
-                        pine = new Pine(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                        pine = new Pine(areaNo);
+                        pine.setToday(Integer.parseInt(result.get("today").toString()));
+                        pine.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                        pine.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
                     }
 
                     changedPine.add(pine);
@@ -126,9 +144,9 @@ public class FetchService {
                 JSONObject result = getData("getPinePollenRiskndxV3", pine.getAreaNo(), time);
                 if (result != null) {
                     if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
-                        pine.setToday(Integer.parseInt(result.get("tomorrow").toString()));
-                        pine.setTomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
-                        pine.setDayaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
+                        pine.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                        pine.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                        pine.setTwodaysaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
                     } else {
                         pine.setToday(Integer.parseInt(result.get("today").toString()));
                         pine.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
@@ -149,9 +167,15 @@ public class FetchService {
                 Weeds weeds;
                 if (result != null) {
                     if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
-                        weeds = new Weeds(result.get("areaNo").toString(), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()), Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
+                        weeds = new Weeds(areaNo);
+                        weeds.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                        weeds.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                        weeds.setTwodaysaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
                     } else {
-                        weeds = new Weeds(result.get("areaNo").toString(), Integer.parseInt(result.get("today").toString()), Integer.parseInt(result.get("tomorrow").toString()), Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                        weeds = new Weeds(areaNo);
+                        weeds.setToday(Integer.parseInt(result.get("today").toString()));
+                        weeds.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                        weeds.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
                     }
 
                     changedWeeds.add(weeds);
@@ -166,9 +190,9 @@ public class FetchService {
                 JSONObject result = getData("getWeedsPollenRiskndxV3", weeds.getAreaNo(), time);
                 if (result != null) {
                     if (result.get("today").toString().equals("")) {    // 전날 18시 데이터 응답 대비
-                        weeds.setToday(Integer.parseInt(result.get("tomorrow").toString()));
-                        weeds.setTomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
-                        weeds.setDayaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
+                        weeds.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
+                        weeds.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
+                        weeds.setTwodaysaftertomorrow(Integer.parseInt(result.get("twodaysaftertomorrow").toString()));
                     } else {    // 당일 06시 데이터 응답
                         weeds.setToday(Integer.parseInt(result.get("today").toString()));
                         weeds.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
@@ -200,6 +224,8 @@ public class FetchService {
         try {
             URL url = new URL(builtUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setConnectTimeout(TIMEOUT_VALUE);
+            conn.setReadTimeout(TIMEOUT_VALUE);
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Content-type", "application/json;utf-8");
             conn.setRequestProperty("Accept", "application/json");
@@ -243,6 +269,5 @@ public class FetchService {
         BufferedReader br = new BufferedReader(inputStreamReader);
         String[] areas = br.readLine().split(" ");
         areaList.addAll(Arrays.asList(areas));
-        fetch();
     }
 }
