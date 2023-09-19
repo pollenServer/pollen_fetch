@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,6 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -44,7 +42,7 @@ public class FetchService {
     private final WeedsRepository weedsRepository;
 
     @Scheduled(cron = "0 05 06,18 * * ?", zone = "Asia/Seoul")    // 매일 06시,18시 05분 실행
-    public void fetch() throws IOException, ParseException {
+    public void fetch() throws IOException {
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         int month = now.getMonthValue();
         String date = now.toLocalDate().toString().replaceAll("-", "");
@@ -65,7 +63,7 @@ public class FetchService {
         }
     }
 
-    public void fetchOakPollen(String time) throws IOException, ParseException {
+    public void fetchOakPollen(String time) throws IOException {
         List<Oak> findAll = oakRepository.findAll();
         List<Oak> changedOak = new ArrayList<>();
 
@@ -111,7 +109,7 @@ public class FetchService {
         }
     }
 
-    public void fetchPinePollen(String time) throws IOException, ParseException {
+    public void fetchPinePollen(String time) throws IOException {
         List<Pine> findAll = pineRepository.findAll();
         List<Pine> changedPine = new ArrayList<>();
 
@@ -157,7 +155,7 @@ public class FetchService {
         }
     }
 
-    public void fetchWeedsPollen(String time) throws IOException, ParseException {
+    public void fetchWeedsPollen(String time) throws IOException {
         List<Weeds> findAll = weedsRepository.findAll();
         List<Weeds> changedWeeds = new ArrayList<>();
 
@@ -203,7 +201,7 @@ public class FetchService {
         }
     }
 
-    public JSONObject getData(String url, String areaNo, String time) throws IOException, ParseException {
+    public JSONObject getData(String url, String areaNo, String time) throws IOException {
         String builtUrl = buildUrl(url, areaNo, time);
         JSONObject object = getJsonObject(builtUrl);
         if (object != null) {
@@ -220,7 +218,7 @@ public class FetchService {
         return null;
     }
 
-    public JSONObject getJsonObject(String builtUrl) throws ParseException {
+    public JSONObject getJsonObject(String builtUrl) {
         try {
             URL url = new URL(builtUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -245,7 +243,7 @@ public class FetchService {
                 conn.disconnect();
                 return null;
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             return null;
         }
     }
@@ -263,7 +261,7 @@ public class FetchService {
     }
 
     @PostConstruct
-    public void ReadAreaCodeService() throws IOException, ParseException {
+    public void ReadAreaCodeService() throws IOException {
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("static/areacode.txt");
         InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
         BufferedReader br = new BufferedReader(inputStreamReader);
