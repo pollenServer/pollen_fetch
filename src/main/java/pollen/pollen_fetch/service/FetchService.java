@@ -49,7 +49,7 @@ public class FetchService {
         String hour = now.toLocalTime().toString().substring(0, 2);
 
         String time = date.concat(hour);
-        log.info("FetchService start time : {}", time);
+        log.info("FetchService start time : {}", now.toString().replace("T", " "));
         // 4~6월 => 소나무, 참나무
         if (4 <= month && month <= 6) {
             fetchOakPollen(time);
@@ -61,6 +61,7 @@ public class FetchService {
         if (8 <= month && month <= 10) {
             fetchWeedsPollen(time);
         }
+        log.info("FetchService end time : {}", now.toString().replace("T", " "));
     }
 
     public void fetchOakPollen(String time) throws IOException {
