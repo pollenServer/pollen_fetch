@@ -280,6 +280,5 @@ public class FetchService {
         BufferedReader br = new BufferedReader(inputStreamReader);
         String[] areas = br.readLine().split(" ");
         areaList.addAll(Arrays.asList(areas));
-        fetch();
     }
 }
