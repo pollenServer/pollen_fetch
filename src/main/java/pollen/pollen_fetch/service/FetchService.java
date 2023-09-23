@@ -42,7 +42,7 @@ public class FetchService {
     private final PineRepository pineRepository;
     private final WeedsRepository weedsRepository;
 
-    EntityManager em;
+    private final EntityManager em;
 
     @Scheduled(cron = "0 05 06,18 * * ?", zone = "Asia/Seoul")    // 매일 06시,18시 05분 실행
     public void fetch() throws IOException {
