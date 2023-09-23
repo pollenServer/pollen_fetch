@@ -37,7 +37,7 @@ public class FetchService {
     @Value("${spring.service.secret_key}")
     private String SERVICEKEY;
     private final String CHARSET = "UTF-8";
-    private final int TIMEOUT_VALUE = 5000;
+    private final int TIMEOUT_VALUE = 7000;
     public List<String> areaList = new ArrayList<>();
 
     private final OakRepository oakRepository;
@@ -46,8 +46,7 @@ public class FetchService {
 
     private final EntityManager em;
 
-    @Scheduled(cron = "0 30 19 * * ?", zone = "Asia/Seoul")    // 매일 06시,18시 05분 실행
-//    @Scheduled(cron = "0 05 06,18 * * ?", zone = "Asia/Seoul")    // 매일 06시,18시 05분 실행
+    @Scheduled(cron = "0 05 06,18 * * ?", zone = "Asia/Seoul")    // 매일 06시,18시 05분 실행
     public void fetch() throws IOException {
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         int month = now.getMonthValue();
@@ -67,6 +66,7 @@ public class FetchService {
         if (8 <= month && month <= 10) {
             fetchWeedsPollen(time);
         }
+        now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         log.info("FetchService end time : {}", now.toString().replace("T", " "));
     }
 
@@ -113,6 +113,8 @@ public class FetchService {
                     }
                 }
             }
+            em.flush();
+            em.clear();
         }
     }
 
@@ -159,6 +161,8 @@ public class FetchService {
                     }
                 }
             }
+            em.flush();
+            em.clear();
         }
     }
 
@@ -276,5 +280,6 @@ public class FetchService {
         BufferedReader br = new BufferedReader(inputStreamReader);
         String[] areas = br.readLine().split(" ");
         areaList.addAll(Arrays.asList(areas));
+        fetch();
     }
 }
