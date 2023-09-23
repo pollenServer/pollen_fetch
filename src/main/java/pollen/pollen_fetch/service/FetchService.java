@@ -8,6 +8,7 @@ import org.json.simple.parser.JSONParser;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import pollen.pollen_fetch.domain.Oak;
 import pollen.pollen_fetch.domain.Pine;
 import pollen.pollen_fetch.domain.Weeds;
@@ -30,6 +31,7 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@Transactional
 public class FetchService {
 
     @Value("${spring.service.secret_key}")
@@ -44,7 +46,8 @@ public class FetchService {
 
     private final EntityManager em;
 
-    @Scheduled(cron = "0 05 06,18 * * ?", zone = "Asia/Seoul")    // 매일 06시,18시 05분 실행
+    @Scheduled(cron = "0 30 19 * * ?", zone = "Asia/Seoul")    // 매일 06시,18시 05분 실행
+//    @Scheduled(cron = "0 05 06,18 * * ?", zone = "Asia/Seoul")    // 매일 06시,18시 05분 실행
     public void fetch() throws IOException {
         LocalDateTime now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
         int month = now.getMonthValue();
