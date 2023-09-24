@@ -37,7 +37,7 @@ public class FetchService {
     @Value("${spring.service.secret_key}")
     private String SERVICEKEY;
     private final String CHARSET = "UTF-8";
-    private final int TIMEOUT_VALUE = 7000;
+    private final int TIMEOUT_VALUE = 10000;
     public List<String> areaList = new ArrayList<>();
 
     private final OakRepository oakRepository;
