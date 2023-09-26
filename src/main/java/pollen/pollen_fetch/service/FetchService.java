@@ -37,7 +37,7 @@ public class FetchService {
     @Value("${spring.service.secret_key}")
     private String SERVICEKEY;
     private final String CHARSET = "UTF-8";
-    private final int TIMEOUT_VALUE = 10000;
+    private final int TIMEOUT_VALUE = 15000;
     public List<String> areaList = new ArrayList<>();
 
     private final OakRepository oakRepository;
@@ -96,8 +96,8 @@ public class FetchService {
                     oak = new Oak(areaNo);
                     changedOak.add(oak);
                 }
-                oakRepository.saveAll(changedOak);
             }
+            oakRepository.saveAll(changedOak);
         } else {
             for (Oak oak : findAll) {
                 JSONObject result = getData("getOakPollenRiskndxV3", oak.getAreaNo(), time);
@@ -144,8 +144,8 @@ public class FetchService {
                     pine = new Pine(areaNo);
                     changedPine.add(pine);
                 }
-                pineRepository.saveAll(changedPine);
             }
+            pineRepository.saveAll(changedPine);
         } else {
             for (Pine pine : findAll) {
                 JSONObject result = getData("getPinePollenRiskndxV3", pine.getAreaNo(), time);
