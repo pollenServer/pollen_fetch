@@ -207,6 +207,7 @@ public class FetchService {
                         weeds.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
                         weeds.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
                     }
+                    log.info("areaNo : {}", weeds.getAreaNo());
                 }
             }
             em.flush();
