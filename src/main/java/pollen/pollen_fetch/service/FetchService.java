@@ -37,7 +37,7 @@ public class FetchService {
     @Value("${spring.service.secret_key}")
     private String SERVICEKEY;
     private final String CHARSET = "UTF-8";
-    private final int TIMEOUT_VALUE = 15000;
+//    private final int TIMEOUT_VALUE = 15000;
     public List<String> areaList = new ArrayList<>();
 
     private final OakRepository oakRepository;
@@ -232,11 +232,12 @@ public class FetchService {
     }
 
     public JSONObject getJsonObject(String builtUrl) {
+        HttpURLConnection conn = null;
         try {
             URL url = new URL(builtUrl);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setConnectTimeout(TIMEOUT_VALUE);
-            conn.setReadTimeout(TIMEOUT_VALUE);
+            conn = (HttpURLConnection) url.openConnection();
+//            conn.setConnectTimeout(TIMEOUT_VALUE);
+//            conn.setReadTimeout(TIMEOUT_VALUE);
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Content-type", "application/json;utf-8");
             conn.setRequestProperty("Accept", "application/json");
@@ -248,16 +249,15 @@ public class FetchService {
                     sb.append(line);
                 }
                 JSONParser jsonParser = new JSONParser();
-                JSONObject object = (JSONObject) jsonParser.parse(sb.toString());
-                conn.disconnect();
-
-                return object;
-            } else {
-                conn.disconnect();
-                return null;
+                return (JSONObject) jsonParser.parse(sb.toString());
             }
+            return null;
         } catch (Exception e) {
             return null;
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
+            }
         }
     }
 
