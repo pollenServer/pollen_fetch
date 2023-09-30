@@ -17,7 +17,6 @@ import pollen.pollen_fetch.repository.PineRepository;
 import pollen.pollen_fetch.repository.WeedsRepository;
 
 import javax.annotation.PostConstruct;
-import javax.persistence.EntityManager;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -37,14 +36,12 @@ public class FetchService {
     @Value("${spring.service.secret_key}")
     private String SERVICEKEY;
     private final String CHARSET = "UTF-8";
-//    private final int TIMEOUT_VALUE = 15000;
+    private final int TIMEOUT_VALUE = 5000;
     public List<String> areaList = new ArrayList<>();
 
     private final OakRepository oakRepository;
     private final PineRepository pineRepository;
     private final WeedsRepository weedsRepository;
-
-    private final EntityManager em;
 
     @Scheduled(cron = "0 05 06,18 * * ?", zone = "Asia/Seoul")    // 매일 06시,18시 05분 실행
     public void fetch() throws IOException {
@@ -111,10 +108,8 @@ public class FetchService {
                         oak.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
                         oak.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
                     }
-                }
+                    oak.setLastModifiedTime(LocalDateTime.now(ZoneId.of("Asia/Seoul")));}
             }
-            em.flush();
-            em.clear();
         }
     }
 
@@ -159,10 +154,9 @@ public class FetchService {
                         pine.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
                         pine.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
                     }
+                    pine.setLastModifiedTime(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
                 }
             }
-            em.flush();
-            em.clear();
         }
     }
 
@@ -207,11 +201,9 @@ public class FetchService {
                         weeds.setTomorrow(Integer.parseInt(result.get("tomorrow").toString()));
                         weeds.setDayaftertomorrow(Integer.parseInt(result.get("dayaftertomorrow").toString()));
                     }
-                    log.info("areaNo : {}", weeds.getAreaNo());
+                    weeds.setLastModifiedTime(LocalDateTime.now(ZoneId.of("Asia/Seoul")));
                 }
             }
-            em.flush();
-            em.clear();
         }
     }
 
@@ -237,8 +229,8 @@ public class FetchService {
         try {
             URL url = new URL(builtUrl);
             conn = (HttpURLConnection) url.openConnection();
-//            conn.setConnectTimeout(TIMEOUT_VALUE);
-//            conn.setReadTimeout(TIMEOUT_VALUE);
+            conn.setConnectTimeout(TIMEOUT_VALUE);
+            conn.setReadTimeout(TIMEOUT_VALUE);
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Content-type", "application/json;utf-8");
             conn.setRequestProperty("Accept", "application/json");
